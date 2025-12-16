@@ -1,0 +1,28 @@
+const flag: Record<string, string> = {
+  en: 'GB',
+  id: 'ID',
+  ja: 'JP',
+  ko: 'KR',
+  zh: 'CN',
+  'zh-hk': 'HK',
+  th: 'TH',
+  vi: 'VN',
+  ms: 'MY',
+  tl: 'PH',
+  es: 'ES',
+  'es-la': 'MX',
+  pt: 'PT',
+  'pt-br': 'BR',
+  fr: 'FR',
+  de: 'DE',
+  it: 'IT',
+  ru: 'RU',
+  ar: 'SA',
+  hi: 'IN',
+  tr: 'TR',
+  pl: 'PL',
+  uk: 'UA',
+  nl: 'NL',
+}
+
+export default flag

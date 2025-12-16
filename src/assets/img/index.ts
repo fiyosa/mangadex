@@ -1,0 +1,1 @@
+export {default as ImgVue} from './vue.svg'

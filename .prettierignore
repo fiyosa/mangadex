@@ -1,0 +1,11 @@
+node_modules
+coverage
+
+vendor
+public
+build
+dist
+*.md
+*.lock
+*lock.yaml
+*lock.json
