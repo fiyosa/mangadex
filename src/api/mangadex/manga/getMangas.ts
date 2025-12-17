@@ -1,5 +1,5 @@
 import { axiosServerLib, tanstackQueryLib } from '@/lib'
-import secretServer from '@/config/secretServer'
+import secretPublic from '@/config/secretPublic'
 
 export interface IGetMangas {
   result: string
@@ -79,7 +79,7 @@ interface IProps {
 
 export const fetchMangas = axiosServerLib.createApiFetcher<IProps['query'], undefined, undefined, IGetMangas>({
   method: 'GET',
-  baseURL: secretServer.API_URL_MANGADEX,
+  baseURL: secretPublic.API_URL_MANGADEX,
   endpoint: () => '/manga',
 })
 

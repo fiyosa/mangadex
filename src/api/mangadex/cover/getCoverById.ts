@@ -1,6 +1,5 @@
 import { axiosServerLib, tanstackQueryLib } from '@/lib'
-import secretServer from '@/config/secretServer'
-import { IGetCoverById } from '@/model/mangadex/cover'
+import secretPublic from '@/config/secretPublic'
 
 interface IProps {
   param: {
@@ -14,7 +13,7 @@ interface IProps {
 // get detail manga
 export const fetchCoverById = axiosServerLib.createApiFetcher<IProps['query'], IProps['param']>({
   method: 'GET',
-  baseURL: secretServer.API_URL_MANGADEX,
+  baseURL: secretPublic.API_URL_MANGADEX,
   endpoint: (p) => `/cover/${p?.param?.id}`,
 })
 

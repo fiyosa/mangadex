@@ -1,5 +1,5 @@
 import { axiosServerLib, tanstackQueryLib } from '@/lib'
-import secretServer from '@/config/secretServer'
+import secretPublic from '@/config/secretPublic'
 import { IGetFeedByMangaId } from '@/model/mangadex/feed'
 
 interface IProps {
@@ -36,7 +36,7 @@ export const fetchFeedByMangaId = axiosServerLib.createApiFetcher<
   IGetFeedByMangaId
 >({
   method: 'GET',
-  baseURL: secretServer.API_URL_MANGADEX,
+  baseURL: secretPublic.API_URL_MANGADEX,
   endpoint: (p) => '/manga/' + p?.param?.manga_id + '/feed',
 })
 

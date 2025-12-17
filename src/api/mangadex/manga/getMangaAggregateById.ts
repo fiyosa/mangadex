@@ -1,5 +1,5 @@
 import { axiosServerLib, tanstackQueryLib } from '@/lib'
-import secretServer from '@/config/secretServer'
+import secretPublic from '@/config/secretPublic'
 
 interface IProps {
   param?: {
@@ -20,7 +20,7 @@ export const fetchMangaAggregateById = axiosServerLib.createApiFetcher<
   any
 >({
   method: 'GET',
-  baseURL: secretServer.API_URL_MANGADEX,
+  baseURL: secretPublic.API_URL_MANGADEX,
   endpoint: (p) => '/manga/' + p?.param?.manga_id + '/aggregate',
 })
 

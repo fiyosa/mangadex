@@ -1,5 +1,5 @@
 import { axiosServerLib, tanstackQueryLib } from '@/lib'
-import secretServer from '@/config/secretServer'
+import secretPublic from '@/config/secretPublic'
 import { IGetChapters } from '@/model/mangadex/chapter'
 
 interface IProps {
@@ -16,7 +16,7 @@ interface IProps {
 
 export const fetchChapters = axiosServerLib.createApiFetcher<IProps['query'], undefined, undefined, IGetChapters>({
   method: 'GET',
-  baseURL: secretServer.API_URL_MANGADEX,
+  baseURL: secretPublic.API_URL_MANGADEX,
   endpoint: () => '/chapter',
 })
 

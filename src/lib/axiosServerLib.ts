@@ -50,6 +50,7 @@ interface FetcherProps<Query = any, Param = any, Payload = any> {
   param?: Param
   payload?: Payload
   headers?: Record<string, string>
+  baseURL?: string
 }
 
 const isFormData = (value: any) => typeof FormData !== 'undefined' && value instanceof FormData
@@ -67,7 +68,7 @@ export const createApiFetcher = <
 }) => {
   return async (props?: FetcherProps<TQuery, TParam, TPayload>): TypeAxios<TResponse> => {
     try {
-      const { query, payload, headers } = props ?? {}
+      const { query, payload, headers, baseURL } = props ?? {}
 
       // Endpoint dynamic/static
       const endpoint = typeof config.endpoint === 'function' ? config.endpoint(props) : config.endpoint
@@ -75,8 +76,8 @@ export const createApiFetcher = <
       // Detect absolute URL
       const isFullUrl = /^https?:\/\//i.test(endpoint)
 
-      // Choose baseURL
-      const base = isFullUrl ? '' : (config.baseURL ?? '')
+      // Choose baseURL: props.baseURL > config.baseURL
+      const base = isFullUrl ? '' : (baseURL ?? config.baseURL ?? '')
 
       // Final URL + querystring
       const url = base + endpoint + createQueryStr({ query })
@@ -132,7 +133,7 @@ export const createApiFetcher = <
     any                 // tipe response
   >({
     method: "POST",
-    baseURL: secretServer.API_URL_MANGADEX,
+    baseURL: secretPublic.API_URL_MANGADEX,
     endpoint: (p) => `/chapter/${p?.param?.id}`
   })
 
@@ -143,7 +144,7 @@ export const createApiFetcher = <
     any                 // tipe response
   >({
     method: "POST",
-    baseURL: secretServer.API_URL_MANGADEX,
+    baseURL: secretPublic.API_URL_MANGADEX,
     endpoint: (p) => `/chapter/${p?.param?.id}`
   })
   postChapterById({

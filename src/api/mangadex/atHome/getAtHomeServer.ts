@@ -1,6 +1,6 @@
 import { axiosServerLib, tanstackQueryLib } from '@/lib'
-import secretServer from '@/config/secretServer'
 import { IGetAtHomeServer } from '@/model/mangadex/AtHome'
+import secretPublic from '@/config/secretPublic'
 
 interface IProps {
   param: {
@@ -19,7 +19,7 @@ export const fetchAtHomeServer = axiosServerLib.createApiFetcher<
   IGetAtHomeServer
 >({
   method: 'GET',
-  baseURL: secretServer.API_URL_MANGADEX,
+  baseURL: secretPublic.API_URL_MANGADEX,
   endpoint: (p) => `/at-home/server/${p?.param?.chapter_id}`,
 })
 

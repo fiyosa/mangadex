@@ -1,5 +1,5 @@
 import { axiosServerLib, tanstackQueryLib } from '@/lib'
-import secretServer from '@/config/secretServer'
+import secretPublic from '@/config/secretPublic'
 
 interface IProps {
   query?: {
@@ -13,7 +13,7 @@ interface IProps {
 // get cover detail
 export const fetchCovers = axiosServerLib.createApiFetcher<IProps['query']>({
   method: 'GET',
-  baseURL: secretServer.API_URL_MANGADEX,
+  baseURL: secretPublic.API_URL_MANGADEX,
   endpoint: () => '/cover',
 })
 

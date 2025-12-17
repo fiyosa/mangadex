@@ -1,16 +1,29 @@
 import * as MangaDexApi from '@/api/mangadex'
 import { NextRequest, NextResponse } from 'next/server'
 
-export async function GET(request: NextRequest, { params }: { params: { path: string[] } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
+  console.log({ anjay: 'loh kok?' })
+
   try {
-    const path = params.path
-    const functionName = path[path.length - 1]
+    const { path } = await params
 
-    // Find the function in the exported module
-    const apiFunction = (MangaDexApi as any)[functionName]
+    // Find the function in the exported module by checking path segments
+    let functionName = ''
+    let apiFunction = null
 
-    if (typeof apiFunction !== 'function') {
-      return NextResponse.json({ message: `Function '${functionName}' not found in MangaDex API` }, { status: 404 })
+    for (const segment of path) {
+      if (typeof (MangaDexApi as any)[segment] === 'function') {
+        functionName = segment
+        apiFunction = (MangaDexApi as any)[segment]
+        break
+      }
+    }
+
+    if (!apiFunction) {
+      return NextResponse.json(
+        { message: `Function not found in MangaDex API. Path: ${path.join('/')}` },
+        { status: 404 }
+      )
     }
 
     // Parse query parameters
