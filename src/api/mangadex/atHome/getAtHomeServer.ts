@@ -12,7 +12,7 @@ interface IProps {
 }
 
 // get list images
-const fetchAtHomeServer = axiosServerLib.createApiFetcher<
+export const fetchAtHomeServer = axiosServerLib.createApiFetcher<
   IProps['query'],
   IProps['param'],
   undefined,

@@ -12,7 +12,7 @@ interface IProps {
 }
 
 // get detail manga
-const fetchCoverById = axiosServerLib.createApiFetcher<IProps['query'], IProps['param']>({
+export const fetchCoverById = axiosServerLib.createApiFetcher<IProps['query'], IProps['param']>({
   method: 'GET',
   baseURL: secretServer.API_URL_MANGADEX,
   endpoint: (p) => `/cover/${p?.param?.id}`,

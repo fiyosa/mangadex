@@ -2,12 +2,13 @@ import { axiosServerLib, tanstackQueryLib } from '@/lib'
 import secretServer from '@/config/secretServer'
 
 interface IProps {
-  param: {
-    manga_id: string // uuid
+  param?: {
+    manga_id?: string // uuid
   }
   query?: {
     'includes[]'?: ('manga' | 'cover_art' | 'author' | 'artist' | 'tag' | 'creator')[]
     'translatedLanguage[]'?: string[]
+    'groups[]'?: string[] // uuid
   }
 }
 

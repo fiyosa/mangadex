@@ -11,7 +11,7 @@ interface IProps {
 }
 
 // get cover detail
-const fetchCovers = axiosServerLib.createApiFetcher<IProps['query']>({
+export const fetchCovers = axiosServerLib.createApiFetcher<IProps['query']>({
   method: 'GET',
   baseURL: secretServer.API_URL_MANGADEX,
   endpoint: () => '/cover',

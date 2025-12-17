@@ -3,21 +3,35 @@
 import { getMangaById } from '@/api/mangadex/manga'
 import { getFeedByMangaId } from '@/api/mangadex/feed/getFeedByMangaId'
 import { mangadexService } from '@/services'
-import { Card, CardBody, Image, Tab, Tabs, Chip, Skeleton, Button, Pagination } from '@heroui/react'
+import {
+  Card,
+  CardBody,
+  Image,
+  Tab,
+  Tabs,
+  Chip,
+  Skeleton,
+  Button,
+  Pagination,
+  Dropdown,
+  DropdownTrigger,
+  DropdownMenu,
+  DropdownItem,
+} from '@heroui/react'
 import { useParams, useRouter } from 'next/navigation'
 import { useMemo, useState } from 'react'
 import { Flag } from '@/components/ui'
 import Link from 'next/link'
 import { getStatisticByMangaId } from '@/api/mangadex/statistics'
-import { ArrowLeft, BookOpen, User, Star, ArrowDownWideNarrow, ArrowUpWideNarrow } from 'lucide-react'
+import { BookOpen, User, Star, ArrowDownWideNarrow, ArrowUpWideNarrow, ChevronDown } from 'lucide-react'
 
 export default function MangaDetailPage() {
   const params = useParams()
-  const router = useRouter()
   const [selectedLang, setSelectedLang] = useState<string>('en')
   const [isExpanded, setIsExpanded] = useState(false)
   const [page, setPage] = useState(1)
   const [order, setOrder] = useState<'asc' | 'desc'>('desc')
+  const [selectedUser, setSelectedUser] = useState<{ user: string; id: string }>({ user: 'All', id: '' })
 
   const mangaId = params.manga_id as string
 
@@ -59,7 +73,24 @@ export default function MangaDetailPage() {
   const title = attributes?.title?.en || Object.values(attributes?.title || {})[0]
   const description = attributes?.description?.en || Object.values(attributes?.description || {})[0]
 
-  const chapters = fetchFeedByMangaId.data?.data?.data || []
+  const rawChapters = fetchFeedByMangaId.data?.data?.data || []
+
+  const uniqueUsers = useMemo(() => {
+    const users = new Set<string>()
+    rawChapters.forEach((ch: any) => {
+      const username = ch.relationships?.find((rel: any) => rel.type === 'user')?.attributes?.username
+      if (username) users.add(username)
+    })
+    return Array.from(users)
+  }, [rawChapters])
+
+  const chapters = useMemo(() => {
+    if (selectedUser.user === 'All') return rawChapters
+    return rawChapters.filter((ch: any) => {
+      const username = ch.relationships?.find((rel: any) => rel.type === 'user')?.attributes?.username
+      return username === selectedUser.user
+    })
+  }, [rawChapters, selectedUser])
   const totalChapters = fetchFeedByMangaId.data?.data?.total || 0
   const totalPages = Math.ceil(totalChapters / 100)
 
@@ -196,13 +227,50 @@ export default function MangaDetailPage() {
                     size="sm"
                     variant="flat"
                     className="min-w-0"
-                    onPress={() => setOrder(order === 'desc' ? 'asc' : 'desc')}
+                    onPress={() => {
+                      setPage(1)
+                      setOrder(order === 'desc' ? 'asc' : 'desc')
+                    }}
                     startContent={
                       order === 'desc' ? <ArrowDownWideNarrow size={16} /> : <ArrowUpWideNarrow size={16} />
                     }
                   >
                     {order === 'desc' ? 'Newest' : 'Oldest'}
                   </Button>
+
+                  <Dropdown>
+                    <DropdownTrigger>
+                      <Button size="sm" variant="flat" endContent={<ChevronDown size={16} />}>
+                        {selectedUser.user === 'All' ? 'All Users' : selectedUser.user}
+                      </Button>
+                    </DropdownTrigger>
+                    <DropdownMenu
+                      aria-label="Filter by User"
+                      selectionMode="single"
+                      selectedKeys={new Set([selectedUser.user])}
+                      onSelectionChange={(keys) => {
+                        const newUser = Array.from(keys)[0] as string
+                        if (newUser === 'All') {
+                          setSelectedUser({ user: 'All', id: '' })
+                        } else {
+                          // Find ID for the selected user
+                          const foundCh = rawChapters.find((ch: any) =>
+                            ch.relationships?.some(
+                              (rel: any) => rel.type === 'user' && rel.attributes?.username === newUser
+                            )
+                          )
+                          const foundRel = foundCh?.relationships?.find(
+                            (rel: any) => rel.type === 'user' && rel.attributes?.username === newUser
+                          )
+                          setSelectedUser({ user: newUser, id: foundRel?.id || '' })
+                        }
+                      }}
+                    >
+                      {['All', ...uniqueUsers].map((user) => (
+                        <DropdownItem key={user}>{user === 'All' ? 'All Users' : user}</DropdownItem>
+                      ))}
+                    </DropdownMenu>
+                  </Dropdown>
                   <Tabs
                     aria-label="Languages"
                     selectedKey={selectedLang}

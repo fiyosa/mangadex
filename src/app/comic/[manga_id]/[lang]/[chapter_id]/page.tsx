@@ -9,6 +9,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { useMemo } from 'react'
 import { getChapterById } from '@/api/mangadex/chapter'
 import { getMangaAggregateById } from '@/api/mangadex/manga'
+import { User } from 'lucide-react'
 
 export default function ChapterReadPage() {
   const params = useParams()
@@ -31,7 +32,7 @@ export default function ChapterReadPage() {
       param: {
         chapter_id: `${params.chapter_id}`,
       },
-      query: { 'includes[]': ['manga'] },
+      query: { 'includes[]': ['manga', 'user'] },
     },
   })
 
@@ -40,8 +41,12 @@ export default function ChapterReadPage() {
       param: {
         manga_id: `${params.manga_id}`,
       },
-      query: { 'translatedLanguage[]': [params.lang as string] },
+      query: {
+        'translatedLanguage[]': [params.lang as string],
+        'groups[]': fetchChapterById.data?.data?.data?.relationships[0]?.id,
+      },
     },
+    enabled: fetchChapterById.isSuccess,
   })
 
   // Mock Images (Vertical Strip)
@@ -84,69 +89,95 @@ export default function ChapterReadPage() {
 
     return (
       <div className="border-divider bg-content1 text-foreground w-full border-y py-2">
-        <div className="container mx-auto flex flex-row items-center justify-between gap-2 px-4">
-          <div className="flex items-center gap-2">
-            <Link href={'..'}>
-              <Btn variant="flat" color="primary" size="sm">
-                ← Back
+        <div className="container mx-auto flex flex-col gap-2 px-4">
+          <div className="flex w-full items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Link href={'..'}>
+                <Btn variant="flat" color="primary" size="sm">
+                  ← Back
+                </Btn>
+              </Link>
+              <div className="hidden flex-col justify-center sm:flex">
+                <span className="text-foreground-600 line-clamp-1 text-sm leading-tight font-bold">
+                  {
+                    Object.values(
+                      (fetchChapterById.data?.data?.data?.relationships[1]?.attributes?.title as object) ?? {}
+                    )[0]
+                  }
+                </span>
+                <span className="text-foreground-400 flex items-center gap-1 text-xs leading-tight">
+                  <User size={12} />
+                  {
+                    fetchChapterById.data?.data?.data?.relationships?.find((rel: any) => rel.type === 'user')
+                      ?.attributes?.username
+                  }{' '}
+                  | Chapter {fetchChapterById.data?.data?.data?.attributes?.chapter}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex flex-1 items-center justify-end gap-2 sm:flex-none">
+              <Btn
+                variant="solid"
+                color="secondary"
+                size="sm"
+                disabled={!prevChapter}
+                onPress={() => prevChapter && router.push(`/comic/${params.manga_id}/${params.lang}/${prevChapter.id}`)}
+                isDisabled={!prevChapter}
+              >
+                Previous
               </Btn>
-            </Link>
-            <div className="hidden flex-col justify-center sm:flex">
-              <span className="text-foreground-600 line-clamp-1 text-sm leading-tight font-bold">
-                {
-                  Object.values(
-                    (fetchChapterById.data?.data?.data?.relationships[1]?.attributes?.title as object) ?? {}
-                  )[0]
-                }
-              </span>
-              <span className="text-foreground-400 text-xs leading-tight">
-                Chapter {fetchChapterById.data?.data?.data?.attributes?.chapter}
-              </span>
+
+              <div className="w-30">
+                <Select
+                  aria-label="Select Ch."
+                  placeholder="Select Ch."
+                  selectedKeys={[params.chapter_id as string]}
+                  onChange={handleChapterChange}
+                  size="sm"
+                  classNames={{
+                    trigger: 'min-h-unit-8 h-8',
+                    value: 'text-small',
+                  }}
+                >
+                  {chapters.map((chapter) => (
+                    <SelectItem key={chapter.id} textValue={`Ch. ${chapter.chapter}`}>
+                      {chapter.chapter}
+                    </SelectItem>
+                  ))}
+                </Select>
+              </div>
+
+              <Btn
+                variant="solid"
+                color="secondary"
+                size="sm"
+                disabled={!nextChapter}
+                onPress={() => nextChapter && router.push(`/comic/${params.manga_id}/${params.lang}/${nextChapter.id}`)}
+                isDisabled={!nextChapter}
+              >
+                Next
+              </Btn>
             </div>
           </div>
 
-          <div className="flex flex-1 items-center justify-end gap-2 sm:flex-none">
-            <Btn
-              variant="solid"
-              color="secondary"
-              size="sm"
-              disabled={!prevChapter}
-              onPress={() => prevChapter && router.push(`/comic/${params.manga_id}/${params.lang}/${prevChapter.id}`)}
-              isDisabled={!prevChapter}
-            >
-              Previous
-            </Btn>
-
-            <div className="w-30">
-              <Select
-                aria-label="Select Ch."
-                placeholder="Select Ch."
-                selectedKeys={[params.chapter_id as string]}
-                onChange={handleChapterChange}
-                size="sm"
-                classNames={{
-                  trigger: 'min-h-unit-8 h-8',
-                  value: 'text-small',
-                }}
-              >
-                {chapters.map((chapter) => (
-                  <SelectItem key={chapter.id} textValue={`Ch. ${chapter.chapter}`}>
-                    {chapter.chapter}
-                  </SelectItem>
-                ))}
-              </Select>
-            </div>
-
-            <Btn
-              variant="solid"
-              color="secondary"
-              size="sm"
-              disabled={!nextChapter}
-              onPress={() => nextChapter && router.push(`/comic/${params.manga_id}/${params.lang}/${nextChapter.id}`)}
-              isDisabled={!nextChapter}
-            >
-              Next
-            </Btn>
+          {/* Mobile Only Info */}
+          <div className="flex flex-col items-center justify-center sm:hidden">
+            <span className="text-foreground-600 line-clamp-1 text-center text-sm leading-tight font-bold">
+              {
+                Object.values(
+                  (fetchChapterById.data?.data?.data?.relationships[1]?.attributes?.title as object) ?? {}
+                )[0]
+              }
+            </span>
+            <span className="text-foreground-400 flex items-center gap-1 text-xs leading-tight">
+              <User size={12} />
+              {
+                fetchChapterById.data?.data?.data?.relationships?.find((rel: any) => rel.type === 'user')?.attributes
+                  ?.username
+              }{' '}
+              | Chapter {fetchChapterById.data?.data?.data?.attributes?.chapter}
+            </span>
           </div>
         </div>
       </div>
