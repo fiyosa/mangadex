@@ -1,18 +1,23 @@
 'use client'
 
-import { getMangaById, getMangaAggregateById } from '@/api/mangadex/manga'
+import { getMangaById } from '@/api/mangadex/manga'
+import { getFeedByMangaId } from '@/api/mangadex/feed/getFeedByMangaId'
 import { mangadexService } from '@/services'
-import { Card, CardBody, Image, Tab, Tabs, Chip, Skeleton, Button } from '@heroui/react'
+import { Card, CardBody, Image, Tab, Tabs, Chip, Skeleton, Button, Pagination } from '@heroui/react'
 import { useParams, useRouter } from 'next/navigation'
 import { useMemo, useState } from 'react'
 import { Flag } from '@/components/ui'
 import Link from 'next/link'
-import { ArrowLeft, BookOpen, User } from 'lucide-react'
+import { getStatisticByMangaId } from '@/api/mangadex/statistics'
+import { ArrowLeft, BookOpen, User, Star, ArrowDownWideNarrow, ArrowUpWideNarrow } from 'lucide-react'
 
 export default function MangaDetailPage() {
   const params = useParams()
   const router = useRouter()
   const [selectedLang, setSelectedLang] = useState<string>('en')
+  const [isExpanded, setIsExpanded] = useState(false)
+  const [page, setPage] = useState(1)
+  const [order, setOrder] = useState<'asc' | 'desc'>('desc')
 
   const mangaId = params.manga_id as string
 
@@ -23,20 +28,29 @@ export default function MangaDetailPage() {
     },
   })
 
-  // Fetch all chapters to filter by language locally or just fetch specific language
-  // For better UX, we might want to fetch 'en' by default or all and filter.
-  // Let's try fetching specific language to reduce payload if possible, or just all.
-  // The aggregate endpoint allows filtering.
-  const { data: aggregateData, isLoading: isAggregateLoading } = getMangaAggregateById({
+  const { data: statisticsData } = getStatisticByMangaId({
     props: {
       param: { manga_id: mangaId },
-      query: { 'translatedLanguage[]': [selectedLang] },
+    },
+  })
+
+  const fetchFeedByMangaId = getFeedByMangaId({
+    props: {
+      param: { manga_id: mangaId },
+      query: {
+        limit: 100,
+        offset: (page - 1) * 100,
+        'translatedLanguage[]': [selectedLang],
+        'order[chapter]': order,
+        'includes[]': ['scanlation_group', 'user'],
+      },
     },
   })
 
   const manga = mangaData?.data?.data
   const attributes = manga?.attributes
   const relationships = manga?.relationships || []
+  const rating = statisticsData?.data?.statistics?.[mangaId]?.rating?.average
 
   const coverArt = relationships.find((rel: any) => rel.type === 'cover_art')?.attributes?.fileName
   const author = relationships.find((rel: any) => rel.type === 'author')?.attributes?.name
@@ -45,22 +59,9 @@ export default function MangaDetailPage() {
   const title = attributes?.title?.en || Object.values(attributes?.title || {})[0]
   const description = attributes?.description?.en || Object.values(attributes?.description || {})[0]
 
-  const chapters = useMemo(() => {
-    const volumes = aggregateData?.data?.volumes || {}
-    let allChapters: any[] = []
-
-    Object.keys(volumes).forEach((volKey) => {
-      const volume = volumes[volKey]
-      Object.keys(volume.chapters).forEach((chKey) => {
-        allChapters.push({
-          ...volume.chapters[chKey],
-          volume: volume.volume,
-        })
-      })
-    })
-
-    return allChapters.sort((a, b) => parseFloat(b.chapter) - parseFloat(a.chapter))
-  }, [aggregateData])
+  const chapters = fetchFeedByMangaId.data?.data?.data || []
+  const totalChapters = fetchFeedByMangaId.data?.data?.total || 0
+  const totalPages = Math.ceil(totalChapters / 100)
 
   if (isMangaLoading) {
     return (
@@ -91,17 +92,6 @@ export default function MangaDetailPage() {
             <div className="to-background absolute inset-0 bg-linear-to-b from-transparent" />
           </>
         )}
-        <div className="absolute top-4 left-4 z-20">
-          <Button
-            as={Link}
-            href="/comic"
-            variant="light"
-            startContent={<ArrowLeft size={20} />}
-            className="text-foreground/80 hover:text-foreground"
-          >
-            Back to Library
-          </Button>
-        </div>
       </div>
 
       <div className="relative z-10 container mx-auto -mt-32 px-4">
@@ -118,12 +108,29 @@ export default function MangaDetailPage() {
             </Card>
 
             <div className="flex w-full flex-wrap justify-center gap-2 md:justify-start">
+              {rating && (
+                <Chip
+                  startContent={<Star size={14} className="fill-yellow-500 text-yellow-500" />}
+                  variant="flat"
+                  size="sm"
+                  className="pl-1"
+                >
+                  {rating.toFixed(1)}
+                </Chip>
+              )}
               <Chip color={attributes?.status === 'completed' ? 'success' : 'primary'} variant="flat" size="sm">
                 {attributes?.status?.toUpperCase()}
               </Chip>
-              <Chip variant="flat" size="sm">
-                {attributes?.publicationDemographic || 'Manga'}
-              </Chip>
+              {attributes?.publicationDemographic && (
+                <Chip variant="flat" size="sm">
+                  {attributes.publicationDemographic.toUpperCase()}
+                </Chip>
+              )}
+              {attributes?.tags?.slice(0, 3).map((tag: any) => (
+                <Chip key={tag.id} variant="flat" size="sm">
+                  {tag.attributes?.name?.en}
+                </Chip>
+              ))}
               {attributes?.contentRating && (
                 <Chip color="danger" variant="flat" size="sm">
                   {attributes?.contentRating?.toUpperCase()}
@@ -133,61 +140,101 @@ export default function MangaDetailPage() {
           </div>
 
           {/* Right Column: Details & Chapters */}
-          <div className="flex-1 space-y-6 pt-4 md:pt-16">
+          <div className="flex-1 space-y-6 pt-4 md:pt-0">
             <div>
               <h1 className="text-foreground mb-2 text-3xl font-bold md:text-5xl">{title}</h1>
               <div className="text-foreground-500 flex flex-wrap gap-x-6 gap-y-2 text-sm">
+                {attributes?.year && (
+                  <Chip size="sm" variant="flat">
+                    {attributes.year}
+                  </Chip>
+                )}
                 {author && (
                   <div className="flex items-center gap-1">
                     <User size={16} />
                     <span>{author}</span>
                   </div>
                 )}
-                {attributes?.year && <span> {attributes.year} </span>}
+                {artist && artist !== author && (
+                  <div className="flex items-center gap-1">
+                    <User size={16} />
+                    <span>{artist}</span>
+                  </div>
+                )}
               </div>
             </div>
 
             <Card className="bg-content1/50 backdrop-blur-md">
               <CardBody className="p-4">
-                <p className="text-foreground-600 text-sm leading-relaxed md:text-base">{description}</p>
+                <p className="text-foreground-600 text-sm leading-relaxed md:text-base">
+                  {isExpanded
+                    ? description
+                    : description?.length > 300
+                      ? description.slice(0, 300) + '...'
+                      : description}
+                  {description?.length > 300 && (
+                    <span
+                      className="text-primary ml-1 cursor-pointer font-medium hover:underline"
+                      onClick={() => setIsExpanded(!isExpanded)}
+                    >
+                      {isExpanded ? 'Show Less' : 'Read More'}
+                    </span>
+                  )}
+                </p>
               </CardBody>
             </Card>
 
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <h2 className="flex items-center gap-2 text-xl font-bold">
                   <BookOpen size={20} />
                   Chapters
                 </h2>
 
-                <Tabs
-                  aria-label="Languages"
-                  selectedKey={selectedLang}
-                  onSelectionChange={(key) => setSelectedLang(key as string)}
-                  size="sm"
-                  variant="underlined"
-                >
-                  <Tab
-                    key="en"
-                    title={
-                      <div className="flex items-center gap-2">
-                        <Flag countryCode="GB" svg /> ENG
-                      </div>
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                  <Button
+                    size="sm"
+                    variant="flat"
+                    className="min-w-0"
+                    onPress={() => setOrder(order === 'desc' ? 'asc' : 'desc')}
+                    startContent={
+                      order === 'desc' ? <ArrowDownWideNarrow size={16} /> : <ArrowUpWideNarrow size={16} />
                     }
-                  />
-                  <Tab
-                    key="id"
-                    title={
-                      <div className="flex items-center gap-2">
-                        <Flag countryCode="ID" svg /> IND
-                      </div>
-                    }
-                  />
-                  {/* Add more as needed */}
-                </Tabs>
+                  >
+                    {order === 'desc' ? 'Newest' : 'Oldest'}
+                  </Button>
+                  <Tabs
+                    aria-label="Languages"
+                    selectedKey={selectedLang}
+                    onSelectionChange={(key) => {
+                      setSelectedLang(key as string)
+                      setPage(1)
+                    }}
+                    size="sm"
+                    variant="underlined"
+                  >
+                    <Tab
+                      key="en"
+                      title={
+                        <div className="flex items-center gap-2">
+                          <Flag countryCode="GB" svg /> ENG
+                        </div>
+                      }
+                    />
+                    <Tab
+                      key="id"
+                      title={
+                        <div className="flex items-center gap-2">
+                          <Flag countryCode="ID" svg /> IND
+                        </div>
+                      }
+                    />
+                    {/* Add more as needed */}
+                  </Tabs>
+                </div>
               </div>
 
-              {isAggregateLoading ? (
+              {fetchFeedByMangaId.isLoading ? (
                 <div className="space-y-2">
                   {[1, 2, 3].map((i) => (
                     <Skeleton key={i} className="h-16 w-full rounded-xl" />
@@ -196,29 +243,51 @@ export default function MangaDetailPage() {
               ) : chapters.length === 0 ? (
                 <div className="text-foreground-500 py-10 text-center">No chapters found for this language.</div>
               ) : (
-                <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
-                  {chapters.map((chapter) => (
-                    <Link
-                      key={chapter.id}
-                      href={`/comic/${mangaId}/${selectedLang}/${chapter.id}`}
-                      className="group block"
-                    >
-                      <Card className="bg-content2 hover:bg-content3 border-l-primary w-full border-l-4 transition-colors">
-                        <CardBody className="px-4 py-3">
-                          <div className="mb-1 flex items-center justify-between">
-                            <span className="group-hover:text-primary text-lg font-bold transition-colors">
-                              Ch. {chapter.chapter}
-                            </span>
-                            <span className="text-tiny text-foreground-400">Vol. {chapter.volume || '-'}</span>
-                          </div>
-                          {/* <span className="text-xs text-foreground-500 truncate">
-                                                {format(new Date(), 'MMM dd, yyyy')}
-                                            </span> */}
-                        </CardBody>
-                      </Card>
-                    </Link>
-                  ))}
-                </div>
+                <>
+                  <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
+                    {chapters.map((chapter: any) => (
+                      <Link
+                        key={chapter.id}
+                        href={`/comic/${mangaId}/${selectedLang}/${chapter.id}`}
+                        className="group block"
+                      >
+                        <Card className="bg-content2 hover:bg-content3 border-l-primary w-full border-l-4 transition-colors">
+                          <CardBody className="px-4 py-3">
+                            <div className="mb-1 flex items-center justify-between">
+                              <span className="group-hover:text-primary text-lg font-bold transition-colors">
+                                Ch. {chapter.attributes.chapter}
+                              </span>
+                              <span className="text-tiny text-foreground-400 flex items-center gap-1">
+                                <User size={12} />
+                                {chapter.relationships?.[2]?.attributes?.username || '-'}
+                              </span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <span className="text-foreground-500 max-w-[150px] truncate text-xs">
+                                {chapter.attributes.title || 'No Title'}
+                              </span>
+                              <span className="text-tiny text-foreground-400">
+                                Vol. {chapter.attributes.volume || '-'}
+                              </span>
+                            </div>
+                          </CardBody>
+                        </Card>
+                      </Link>
+                    ))}
+                  </div>
+                  {totalPages > 1 && (
+                    <div className="flex justify-center pt-4">
+                      <Pagination
+                        total={totalPages}
+                        page={page}
+                        onChange={setPage}
+                        showControls
+                        color="primary"
+                        variant="flat"
+                      />
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </div>
