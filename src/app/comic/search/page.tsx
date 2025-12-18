@@ -1,6 +1,7 @@
 'use client'
 
 import { getMangas } from '@/api/mangadex/manga'
+import { getMangaStatistics } from '@/api/mangadex/statistics'
 import { CardSkeleton } from '@/app/comic/_lib/CardSkeleton'
 import { CardManga } from './_lib/CardManga'
 import { Input, Button, Spinner } from '@heroui/react'
@@ -44,6 +45,17 @@ export default function Search() {
       },
     },
     enabled: debouncedTerm.length > 0,
+  })
+
+  // Fetch statistics
+  const mangaIds = mangas.map((m) => m.id)
+  const { data: statsData } = getMangaStatistics({
+    props: {
+      query: {
+        'manga[]': mangaIds,
+      },
+    },
+    enabled: mangaIds.length > 0,
   })
 
   // Append data when fetched
@@ -126,7 +138,10 @@ export default function Search() {
       <div className="grid grid-cols-[repeat(auto-fill,160px)] justify-center gap-4">
         {isPending && offset === 0 && debouncedTerm
           ? Array.from({ length: 16 }).map((_, index) => <CardSkeleton key={index} />)
-          : mangas.map((manga, index) => <CardManga key={`${manga.id}-${index}`} manga={manga} />)}
+          : mangas.map((manga, index) => {
+              const rating = statsData?.data?.statistics?.[manga.id]?.rating?.bayesian
+              return <CardManga key={`${manga.id}-${index}`} manga={{ ...manga, rating }} />
+            })}
 
         {isLoadingMore && Array.from({ length: 4 }).map((_, index) => <CardSkeleton key={`loading-${index}`} />)}
       </div>

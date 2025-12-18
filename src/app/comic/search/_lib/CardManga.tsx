@@ -5,6 +5,7 @@ import { mangadexService } from '@/services'
 import { Image } from '@heroui/react'
 import { useTheme } from 'next-themes'
 import Link from 'next/link'
+import { Star } from 'lucide-react'
 import { useState, useCallback } from 'react'
 
 const MAX_RETRIES = 3
@@ -18,6 +19,7 @@ interface IProps {
     author?: string
     year?: number
     status?: string
+    rating?: number
   }
 }
 
@@ -52,7 +54,6 @@ export const CardManga = (props: IProps) => {
           {isLoading && !isError && (
             <div className="absolute inset-0 z-10 animate-pulse bg-linear-to-r from-slate-300 via-slate-200 to-slate-300" />
           )}
-
           {/* Error state */}
           {isError && (
             <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-slate-400 transition-all duration-300 group-hover:blur-[2px]">
@@ -72,7 +73,6 @@ export const CardManga = (props: IProps) => {
               </svg>
             </div>
           )}
-
           <Image
             key={imageKey}
             src={
@@ -88,24 +88,29 @@ export const CardManga = (props: IProps) => {
             onLoad={() => setIsLoading(false)}
             onError={handleError}
           />
-
           {/* Overlay */}
           {!isError && (
             <div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/20 to-transparent opacity-90 transition-all duration-300 group-hover:from-black/90 group-hover:via-black/50 group-hover:to-black/30" />
           )}
-
           {/* Top badge - Status */}
-          <div className="absolute top-0 left-0 z-20 flex w-full items-center justify-between p-2">
-            <span
-              className={`rounded-md px-1.5 py-0.5 text-[10px] font-bold text-white uppercase shadow-md ${props.manga.status === 'completed' ? 'bg-green-500' : 'bg-blue-500'}`}
-            >
-              {props.manga.status || 'Unknown'}
-            </span>
+          <div className="absolute top-0 left-0 z-20 flex w-full items-start justify-between p-2">
+            <div className="flex flex-col items-start gap-1">
+              <span
+                className={`rounded-md px-1.5 py-0.5 text-[10px] font-bold text-white uppercase shadow-md ${props.manga.status === 'completed' ? 'bg-green-500' : 'bg-blue-500'}`}
+              >
+                {props.manga.status || 'Unknown'}
+              </span>
+              {props.manga.rating && (
+                <div className="flex w-fit items-center gap-0.5 rounded-sm bg-black/50 px-1 text-[10px] text-yellow-400">
+                  <Star size={10} fill="currentColor" />
+                  <span>{props.manga.rating.toFixed(1)}</span>
+                </div>
+              )}
+            </div>
             {props.manga.year && (
               <span className="rounded-sm bg-black/50 px-1 text-[10px] text-white">{props.manga.year}</span>
             )}
           </div>
-
           {/* Bottom info */}
           <div className="absolute bottom-0 left-0 z-20 w-full p-3">
             {/* Author */}
