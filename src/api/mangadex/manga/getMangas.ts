@@ -74,6 +74,8 @@ interface IProps {
     'ids[]'?: string[]
     'includes[]'?: ('manga' | 'cover_art' | 'author' | 'artist' | 'tag')[]
     'contentRating[]'?: ('safe' | 'suggestive' | 'erotica' | 'pornographic')[]
+    'order[followedCount]'?: 'desc' | 'asc'
+    'order[relevance]'?: 'desc' | 'asc'
   }
 }
 

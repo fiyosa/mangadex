@@ -39,6 +39,8 @@ export default function Search() {
         offset: offset,
         'includes[]': ['cover_art', 'author'],
         'contentRating[]': ['safe', 'suggestive', 'erotica', 'pornographic'],
+        'order[followedCount]': 'desc',
+        'order[relevance]': 'desc',
       },
     },
     enabled: debouncedTerm.length > 0,

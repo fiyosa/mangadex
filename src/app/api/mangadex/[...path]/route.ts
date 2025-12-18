@@ -8,7 +8,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const searchParams = request.nextUrl.searchParams.toString()
 
     const fullUrl = secretServer.API_URL_MANGADEX + `/${endpoint}${searchParams ? `?${searchParams}` : ''}`
-    console.log({ fullUrl })
 
     const res = await fetch(fullUrl)
     const data = await res.json()
